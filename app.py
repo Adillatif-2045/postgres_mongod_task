@@ -1,11 +1,12 @@
 import os
 import zipfile
-
+from embeddings import get_embeddings
 import psycopg2
 from flask import Flask, request, redirect, url_for, flash, render_template
 from werkzeug.utils import secure_filename
 import psycopg2
 import psycopg2.extras
+
 
 UPLOAD_FOLDER = os.path.dirname(os.path.realpath(__file__))
 ALLOWED_EXTENSIONS = set(['zip'])
@@ -57,8 +58,11 @@ def upload_file():
             images = os.listdir(images_folder)  # list all the files in the folder
             if len(images) > 0:  # if there is at least one image file
                 image_path = os.path.join(images_folder, images[0])  # get the path of the first image file
-                cursor.execute("INSERT INTO upload (title) VALUES (%s)", (image_path,))
+                embed = get_embeddings(image_path)
+                img_name = image_path.split('\\')[-1]
+                cursor.execute("INSERT INTO upload (title,embedding, name) VALUES (%s,%s,%s)", (image_path, str(embed), img_name))
                 conn.commit()
+
                 return render_template('image.html', image_path=image_path)  # display the first image file
 
             else:  # if there is no image file in the folder
